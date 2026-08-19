@@ -47,14 +47,13 @@ The system collects sensor readings using an ESP32, captures images using an ESP
 
 🔧 Hardware Components
 
-Component| Purpose
-ESP32| Main microcontroller and sensor data acquisition
-ESP32-CAM| Captures images for visual analysis
-FC-28 Soil Moisture Sensor| Measures soil moisture
-MPU6050| Measures acceleration, tilt and vibration
-MH-RD Rain Sensor| Detects rainfall
-NEO-6M GPS| Provides geographical location
-Power Supply| Powers the monitoring system
+- ESP32                      
+- ESP32-CAM                    
+- FC-28 Soil Moisture Sensor
+- MPU6050
+- MH-RD Rain Sensor            
+- NEO-6M GPS                   
+- Power Supply                 
 
 ---
 
