@@ -149,8 +149,6 @@ The dashboard can display:
 - ⚠️ Landslide risk
 - 📊 Sensor graphs
 
-WebSocket communication is used to support real-time data updates.
-
 <img width="1920" height="1200" alt="Screenshot 2026-03-26 201156" src="https://github.com/user-attachments/assets/1abce267-f5f4-4597-b25d-93ad3cec4f1e" />
 
 
@@ -172,7 +170,6 @@ WebSocket communication is used to support real-time data updates.
 - ✅ LSTM-based sensor fusion
 - ✅ Landslide risk prediction
 - ✅ FastAPI backend
-- ✅ WebSocket-based real-time communication
 - ✅ Interactive monitoring dashboard
 
 ---
@@ -200,5 +197,5 @@ Project: Landslide Monitoring and Prediction: Sensor and Image Fusion
 
 Domain: Electronics and Communication Engineering / IoT / Machine Learning / Computer Vision
 
-Technologies: ESP32, ESP32-CAM, Python, PyTorch, FastAPI, WebSocket, SQLite, JavaScript
+Technologies: ESP32, ESP32-CAM, Python, PyTorch, FastAPI, SQLite
 
