@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Landslide Monitor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/static/dashboard.css"/>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header>
+  <div class="logo">LANDSLIDE<span>/</span>MONITOR <span>v2.0</span></div>
+  <div class="status-bar">
+    <div><span class="dot" id="ws-dot"></span><span id="ws-status">DISCONNECTED</span></div>
+    <div id="last-update">--:--:--</div>
+  </div>
+</header>
+
+<!-- ═══════════════ ALERT BANNER ══════════════ -->
+<div id="alert-banner">⚠ CRITICAL RISK — EVACUATE AND ALERT IMMEDIATELY</div>
+
+<!-- ═══════════════ STAT ROW (4 cards) ═════════════════ -->
+<div class="stat-row">
+
+  <div class="stat-card" id="card-moisture">
+    <div class="stat-label">Soil Moisture</div>
+    <div class="stat-value" id="val-moisture">--</div>
+    <div class="stat-unit">percent %</div>
+  </div>
+
+  <div class="stat-card" id="card-rain">
+    <div class="stat-label">Rain Intensity</div>
+    <div class="stat-value" id="val-rain">--</div>
+    <div class="stat-unit">percent %</div>
+  </div>
+
+  <div class="stat-card" id="card-vibration">
+    <div class="stat-label">Vibration</div>
+    <div class="stat-value" id="val-vibration">--</div>
+    <div class="stat-unit">g-force</div>
+  </div>
+
+  <!-- RISK LEVEL card (replaces old "Last Prediction") -->
+  <div class="stat-card" id="card-risk">
+    <div class="stat-label">Risk Level</div>
+    <div class="stat-value" id="val-risk" style="font-size:22px">--</div>
+    <div class="stat-unit" id="val-risk-method">method --</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ MAIN GRID ═══════════════ -->
+<div class="main">
+
+  <!-- ─── LEFT COLUMN ─── -->
+  <div class="left-col">
+
+    <div class="panel">
+      <div class="panel-title">Soil Moisture <span>LIVE</span></div>
+      <div class="chart-wrap"><canvas id="chartMoisture"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Rain Intensity <span>LIVE</span></div>
+      <div class="chart-wrap"><canvas id="chartRain"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Vibration (G-Force) <span>LIVE</span></div>
+      <div class="chart-wrap"><canvas id="chartVibration"></canvas></div>
+    </div>
+
+    <!-- History table -->
+    <div class="panel" style="flex:1">
+      <div class="panel-title">History</div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('sensors')">Sensor Readings</div>
+        <div class="tab" onclick="switchTab('predictions')">Predictions</div>
+      </div>
+
+      <div class="tab-content active" id="tab-sensors">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th><th>Moisture %</th><th>Rain %</th>
+                <th>Vibration</th><th>Lat</th><th>Lon</th>
+                <th>Alt (m)</th><th>Sats</th>
+              </tr>
+            </thead>
+            <tbody id="sensor-table-body">
+              <tr><td colspan="8" style="color:var(--muted);text-align:center;padding:20px">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-predictions">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th><th>Crack</th><th>Skeleton px</th>
+                <th>Length px</th><th>Width px</th>
+                <th>Risk</th><th>Method</th>
+              </tr>
+            </thead>
+            <tbody id="pred-table-body">
+              <tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end left-col -->
+
+  <!-- ─── RIGHT COLUMN ─── -->
+  <div class="right-col">
+
+    <!-- RISK LEVEL panel -->
+    <div class="panel">
+      <div class="panel-title">Risk Assessment</div>
+      <div class="risk-panel-body">
+        <div class="risk-badge" id="risk-badge">WAITING</div>
+        <div class="risk-description" id="risk-desc">Awaiting sensor and image data</div>
+
+        <!-- Probability bars for each class -->
+        <div class="risk-probs">
+          <div class="prob-row prob-safe">
+            <span class="prob-label">Safe</span>
+            <div class="prob-bar-bg"><div class="prob-bar-fill" id="prob-safe"></div></div>
+            <span class="prob-pct" id="pct-safe">--</span>
+          </div>
+          <div class="prob-row prob-watch">
+            <span class="prob-label">Watch</span>
+            <div class="prob-bar-bg"><div class="prob-bar-fill" id="prob-watch"></div></div>
+            <span class="prob-pct" id="pct-watch">--</span>
+          </div>
+          <div class="prob-row prob-warning">
+            <span class="prob-label">Warning</span>
+            <div class="prob-bar-bg"><div class="prob-bar-fill" id="prob-warning"></div></div>
+            <span class="prob-pct" id="pct-warning">--</span>
+          </div>
+          <div class="prob-row prob-critical">
+            <span class="prob-label">Critical</span>
+            <div class="prob-bar-bg"><div class="prob-bar-fill" id="prob-critical"></div></div>
+            <span class="prob-pct" id="pct-critical">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRACK DETECTION panel -->
+    <div class="panel">
+      <div class="panel-title">Crack Detection</div>
+      <div class="crack-panel-body">
+
+        <!-- Status + confidence -->
+        <div class="crack-status waiting" id="crack-status">WAITING</div>
+        <div class="confidence-bar-wrap">
+          <div class="confidence-bar-bg">
+            <div class="confidence-bar-fill" id="conf-bar"></div>
+          </div>
+          <div class="conf-text" id="conf-value">-- %</div>
+        </div>
+
+        <!-- Measurements -->
+        <div class="crack-metrics">
+          <div class="metric-item">
+            <div class="metric-key">Crack Length</div>
+            <div class="metric-val" id="crack-length">--</div>
+            <div class="stat-unit">pixels</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-key">Crack Width</div>
+            <div class="metric-val" id="crack-width">--</div>
+            <div class="stat-unit">pixels</div>
+          </div>
+          <div class="metric-item full">
+            <div class="metric-key">Skeleton Pixels</div>
+            <div class="metric-val" id="crack-skeleton">--</div>
+            <div class="stat-unit">centre-line pixels</div>
+          </div>
+        </div>
+
+        <div class="pred-time" id="pred-timestamp">no data yet</div>
+      </div>
+    </div>
+
+    <!-- ESP32-CAM LIVE FEED panel -->
+    <div class="panel">
+      <div class="panel-title">
+        ESP32-CAM Feed
+        <span id="cam-age">no frame yet</span>
+      </div>
+      <div class="cam-panel-body">
+        <div class="cam-frame" id="cam-frame">
+          <img id="cam-img" src="" alt="Awaiting frame…"/>
+          <span class="rec-dot" id="rec-dot"></span>
+          <div class="cam-placeholder" id="cam-placeholder">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <rect x="2" y="6" width="20" height="14" rx="2"/>
+              <circle cx="12" cy="13" r="3.5"/>
+              <path d="M8 6V4h8v2"/>
+            </svg>
+            <div>Awaiting first frame</div>
+          </div>
+        </div>
+        <div class="cam-meta">
+          <div class="cam-stat"><span class="metric-key">Resolution</span><span class="metric-val" id="cam-res" style="font-size:13px">--</span></div>
+          <div class="cam-stat"><span class="metric-key">Frame #</span><span class="metric-val" id="cam-count" style="font-size:13px">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GPS -->
+    <div class="panel">
+      <div class="panel-title">GPS Location</div>
+      <div class="gps-grid">
+        <div class="gps-item">
+          <div class="gps-key">Latitude</div>
+          <div class="gps-val" id="gps-lat">--</div>
+        </div>
+        <div class="gps-item">
+          <div class="gps-key">Longitude</div>
+          <div class="gps-val" id="gps-lon">--</div>
+        </div>
+        <div class="gps-item">
+          <div class="gps-key">Altitude</div>
+          <div class="gps-val" id="gps-alt">--</div>
+        </div>
+        <div class="gps-item">
+          <div class="gps-key">Satellites</div>
+          <div class="gps-val" id="gps-sats">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event log -->
+    <div class="panel" style="flex:1">
+      <div class="panel-title">Event Log</div>
+      <div id="event-log"></div>
+    </div>
+
+  </div><!-- end right-col -->
+
+</div><!-- end main -->
+
+<!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+<script>
+  const SERVER  = window.location.hostname + ':8000';
+  const MAX_PTS = 30;
+
+  // ── Chart setup ───────────────────────────────────
+  const chartCfg = (color) => ({
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        borderColor: color,
+        borderWidth: 1.5,
+        fill: true,
+        backgroundColor: color.replace('rgb(', 'rgba(').replace(')', ',0.07)'),
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: { legend: { display: false } },
+      elements: { point: { radius: 0 } },
+      scales: {
+        x: { display: false },
+        y: {
+          grid: { color: '#1e2a3a' },
+          ticks: { color: '#4a5568', font: { family: 'Space Mono', size: 9 } },
+          border: { display: false },
+        }
+      }
+    }
+  });
+
+  const chartMoisture  = new Chart(document.getElementById('chartMoisture'),  chartCfg('rgb(0,229,255)'));
+  const chartRain      = new Chart(document.getElementById('chartRain'),      chartCfg('rgb(255,215,64)'));
+  const chartVibration = new Chart(document.getElementById('chartVibration'), chartCfg('rgb(255,107,53)'));
+
+  function pushChart(chart, val) {
+    chart.data.labels.push(new Date().toLocaleTimeString());
+    chart.data.datasets[0].data.push(val);
+    if (chart.data.labels.length > MAX_PTS) {
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+    }
+    chart.update('none');
+  }
+
+  // ── Flash card animation ──────────────────────────
+  function flashCard(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('updated');
+    void el.offsetWidth;
+    el.classList.add('updated');
+    setTimeout(() => el.classList.remove('updated'), 500);
+  }
+
+  // ── Sensor update ─────────────────────────────────
+  function updateSensors(d) {
+    document.getElementById('val-moisture').textContent  = d.moisture.toFixed(1);
+    document.getElementById('val-rain').textContent      = d.rain.toFixed(1);
+    document.getElementById('val-vibration').textContent = d.vibration.toFixed(3);
+    document.getElementById('gps-lat').textContent       = d.lat       ? d.lat.toFixed(6)      : '--';
+    document.getElementById('gps-lon').textContent       = d.lon       ? d.lon.toFixed(6)      : '--';
+    document.getElementById('gps-alt').textContent       = d.altitude  ? d.altitude.toFixed(1) + ' m' : '--';
+    document.getElementById('gps-sats').textContent      = d.satellites ?? '--';
+    document.getElementById('last-update').textContent   = new Date().toLocaleTimeString();
+
+    pushChart(chartMoisture,  d.moisture);
+    pushChart(chartRain,      d.rain);
+    pushChart(chartVibration, d.vibration);
+
+    ['card-moisture', 'card-rain', 'card-vibration'].forEach(flashCard);
+    logEvent(`SENSOR  moisture:${d.moisture.toFixed(1)}%  rain:${d.rain.toFixed(1)}%  vib:${d.vibration.toFixed(3)}g`);
+  }
+
+  // ── Prediction update ─────────────────────────────
+  function updatePrediction(d) {
+    const hasCrack  = d.has_crack;
+    const conf      = Math.round((d.confidence || 0) * 100);
+    const risk      = (d.risk_level   || 'SAFE').toLowerCase();
+    const riskLabel = (d.risk_level   || '--').toUpperCase();
+    const riskDesc  = d.risk_description || '';
+    const method    = d.method || '--';
+    const skel      = d.skeleton_pixels ?? '--';
+    const length    = d.length_px       ?? '--';
+    const width     = d.width_px        ?? '--';
+    const probs     = d.probabilities   || {};
+
+    // ── Crack Detection panel ──────────────────────
+    const statusEl = document.getElementById('crack-status');
+    if (hasCrack) {
+      statusEl.textContent = 'CRACK DETECTED';
+      statusEl.className   = 'crack-status crack';
+    } else {
+      statusEl.textContent = 'NO CRACK';
+      statusEl.className   = 'crack-status no-crack';
+    }
+
+    document.getElementById('conf-bar').style.width    = conf + '%';
+    document.getElementById('conf-bar').className      = 'confidence-bar-fill ' + (hasCrack ? 'crack' : '');
+    document.getElementById('conf-value').textContent  = conf + ' %';
+    document.getElementById('crack-length').textContent   = length !== '--' ? length + ' px' : '--';
+    document.getElementById('crack-width').textContent    = width  !== '--' ? width  + ' px' : '--';
+    document.getElementById('crack-skeleton').textContent = skel;
+    document.getElementById('pred-timestamp').textContent = new Date(d.timestamp).toLocaleTimeString();
+
+    // ── Risk Level card (top row) ──────────────────
+    const valRisk = document.getElementById('val-risk');
+    valRisk.textContent = riskLabel;
+    valRisk.className   = 'stat-value risk-' + risk;
+    document.getElementById('card-risk').className  = 'stat-card updated risk-' + risk;
+    document.getElementById('val-risk-method').textContent = 'via ' + method;
+
+    // ── Risk badge (right panel) ───────────────────
+    const badge = document.getElementById('risk-badge');
+    badge.textContent = riskLabel;
+    badge.className   = 'risk-badge risk-' + risk;
+    document.getElementById('risk-desc').textContent = riskDesc;
+
+    // ── Probability bars ───────────────────────────
+    const probMap = {
+      safe    : probs['SAFE']     || 0,
+      watch   : probs['WATCH']    || 0,
+      warning : probs['WARNING']  || 0,
+      critical: probs['CRITICAL'] || 0,
+    };
+    Object.entries(probMap).forEach(([key, val]) => {
+      const pct = Math.round(val * 100);
+      document.getElementById('prob-'  + key).style.width = pct + '%';
+      document.getElementById('pct-'   + key).textContent  = pct + '%';
+    });
+
+    // ── Critical mode — turn all cyan writings RED ─
+    if (risk === 'critical') {
+      document.body.classList.add('critical-mode');
+      document.getElementById('alert-banner').style.display = 'block';
+      logEvent('⚠ CRITICAL RISK — ' + riskDesc, '#ff1744');
+    } else {
+      document.body.classList.remove('critical-mode');
+      document.getElementById('alert-banner').style.display = 'none';
+      logEvent(`PREDICT  crack=${hasCrack}  skel=${skel}  risk=${riskLabel}  (${conf}%)`,
+               hasCrack ? '#ff1744' : '#00e676');
+    }
+
+    flashCard('card-risk');
+  }
+
+  // ── Event log ─────────────────────────────────────
+  function logEvent(msg, color) {
+    const log   = document.getElementById('event-log');
+    const entry = document.createElement('div');
+    entry.style.color   = color || '#4a5568';
+    entry.textContent   = new Date().toLocaleTimeString() + '   ' + msg;
+    log.prepend(entry);
+    if (log.children.length > 60) log.lastChild.remove();
+  }
+
+  // ── WebSocket ─────────────────────────────────────
+  function connectWS() {
+    const dot = document.getElementById('ws-dot');
+    const lbl = document.getElementById('ws-status');
+    const ws  = new WebSocket(`ws://${SERVER}/ws`);
+
+    ws.onopen = () => {
+      dot.className    = 'dot live';
+      lbl.textContent  = 'LIVE';
+      logEvent('WebSocket connected', '#00e676');
+    };
+
+    ws.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      if (d.type === 'sensor')     updateSensors(d);
+      if (d.type === 'prediction') updatePrediction(d);
+    };
+
+    ws.onclose = () => {
+      dot.className   = 'dot dead';
+      lbl.textContent = 'RECONNECTING...';
+      logEvent('Disconnected — retrying in 3s', '#ff1744');
+      setTimeout(connectWS, 3000);
+    };
+
+    ws.onerror = () => ws.close();
+  }
+
+  // ── History loader ────────────────────────────────
+  async function loadHistory() {
+    try {
+      const [sRes, pRes] = await Promise.all([
+        fetch(`http://${SERVER}/history/sensors`),
+        fetch(`http://${SERVER}/history/predictions`),
+      ]);
+      const sensors     = await sRes.json();
+      const predictions = await pRes.json();
+
+      // Sensor table
+      document.getElementById('sensor-table-body').innerHTML = sensors.length
+        ? sensors.map(r => `<tr>
+            <td>${new Date(r.timestamp).toLocaleTimeString()}</td>
+            <td>${(r.moisture  || 0).toFixed(1)}</td>
+            <td>${(r.rain      || 0).toFixed(1)}</td>
+            <td>${(r.vibration || 0).toFixed(3)}</td>
+            <td>${r.lat       ? r.lat.toFixed(5)       : '--'}</td>
+            <td>${r.lon       ? r.lon.toFixed(5)       : '--'}</td>
+            <td>${r.altitude  ? r.altitude.toFixed(1)  : '--'}</td>
+            <td>${r.satellites ?? '--'}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:20px">No data yet</td></tr>';
+
+      // Predictions table
+      document.getElementById('pred-table-body').innerHTML = predictions.length
+        ? predictions.map(r => {
+            const risk = (r.risk_level || 'safe').toLowerCase();
+            return `<tr>
+              <td>${new Date(r.timestamp).toLocaleTimeString()}</td>
+              <td><span class="badge ${r.has_crack ? 'crack' : 'no-crack'}">${r.has_crack ? 'crack' : 'no crack'}</span></td>
+              <td>${r.skeleton_pixels ?? '--'}</td>
+              <td>${r.length_px       ?? '--'}</td>
+              <td>${r.width_px        ?? '--'}</td>
+              <td><span class="badge ${risk}">${r.risk_level || '--'}</span></td>
+              <td style="color:var(--muted);font-size:9px">${r.method || '--'}</td>
+            </tr>`;
+          }).join('')
+        : '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">No predictions yet</td></tr>';
+
+    } catch(e) {
+      logEvent('History load failed — is server running?', '#ff1744');
+    }
+  }
+
+  // ── Tab switch ────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', ['sensors', 'predictions'][i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => {
+      c.classList.toggle('active', c.id === 'tab-' + name);
+    });
+    loadHistory();
+  }
+
+  // ── ESP32-CAM feed ────────────────────────────────
+  let camFrameCount = 0;
+  let camLastTime   = null;
+
+  async function refreshCamFeed() {
+    try {
+      // Bust cache with a timestamp param so browser always fetches fresh
+      const res = await fetch(`http://${SERVER}/image?t=${Date.now()}`);
+      if (!res.ok || res.status === 204) return;   // no frame yet
+
+      const blob   = await res.blob();
+      const url    = URL.createObjectURL(blob);
+      const img    = document.getElementById('cam-img');
+      const old    = img.src;
+
+      img.onload = () => {
+        // Reveal image, hide placeholder
+        document.getElementById('cam-placeholder').style.display = 'none';
+        document.getElementById('rec-dot').style.display = 'block';
+        img.style.display = 'block';
+
+        // Resolution
+        document.getElementById('cam-res').textContent = img.naturalWidth + '×' + img.naturalHeight;
+
+        // Frame counter + age
+        camFrameCount++;
+        camLastTime = new Date();
+        document.getElementById('cam-count').textContent = camFrameCount;
+        document.getElementById('cam-age').textContent   = camLastTime.toLocaleTimeString();
+
+        // Free previous blob URL
+        if (old && old.startsWith('blob:')) URL.revokeObjectURL(old);
+      };
+      img.src = url;
+    } catch (e) {
+      // Server not reachable — silently skip
+    }
+  }
+
+  // Poll every 2 s (matches typical ESP32-CAM push cadence)
+  refreshCamFeed();
+  setInterval(refreshCamFeed, 2000);
+
+  // Also refresh immediately whenever a prediction arrives
+  // (prediction is triggered by the ESP32 sending a new frame)
+  const _origUpdatePred = updatePrediction;
+  updatePrediction = function(d) {
+    _origUpdatePred(d);
+    refreshCamFeed();
+  };
+
+  // ── Init ──────────────────────────────────────────
+  connectWS();
+  loadHistory();
+  setInterval(loadHistory, 15000);
+</script>
+
+</body>
+</html>
