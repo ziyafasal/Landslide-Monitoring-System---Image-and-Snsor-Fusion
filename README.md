@@ -1,4 +1,4 @@
-Landslide Monitoring and Prediction System
+**🌍 Landslide Monitoring and Prediction System**
 
 Sensor Fusion + Image Fusion Based Landslide Monitoring and Risk Prediction
 
@@ -40,72 +40,8 @@ The system collects sensor readings using an ESP32, captures images using an ESP
 
 🏗️ System Architecture
 
-                    ┌─────────────────────┐
-                    │      Sensors        │
-                    │                     │
-                    │ • Soil Moisture     │
-                    │ • Rainfall          │
-                    │ • MPU6050            │
-                    │ • GPS               │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │       ESP32         │
-                    │ Sensor Data         │
-                    │ Acquisition         │
-                    └──────────┬──────────┘
-                               │
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │     ESP32-CAM       │
-                    │   Image Capture     │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-              ┌────────────────────────────────┐
-              │      Image Processing / ML     │
-              │                                │
-              │ • ResNet18                     │
-              │ • MobileNetV2                  │
-              │ • FPN Segmentation             │
-              └────────────────┬───────────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Sensor + Image    │
-                    │       Fusion         │
-                    │                      │
-                    │       LSTM           │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Risk Prediction   │
-                    │                     │
-                    │  Low / Medium /     │
-                    │       High          │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   FastAPI Backend   │
-                    │                     │
-                    │ • Data Processing   │
-                    │ • Database          │
-                    │ • WebSocket         │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Web Dashboard     │
-                    │                     │
-                    │ • Live Sensors      │
-                    │ • Risk Prediction   │
-                    │ • GPS Location      │
-                    │ • Graphs             │
-                    └─────────────────────┘
+ <img width="1342" height="690" alt="Screenshot 2026-08-19 161001" src="https://github.com/user-attachments/assets/a1f7c77f-72cb-4933-915b-92efc8161463" />
+            
 
 ---
 
@@ -119,76 +55,6 @@ MPU6050| Measures acceleration, tilt and vibration
 MH-RD Rain Sensor| Detects rainfall
 NEO-6M GPS| Provides geographical location
 Power Supply| Powers the monitoring system
-
----
-
-🤖 Machine Learning Pipeline
-
-The project uses multiple deep-learning models for visual analysis and sensor-based prediction.
-
-1. Image Classification
-
-A MobileNetV2-based CNN is used for image classification and crack-related visual analysis.
-
-MobileNetV2 was selected because of its relatively lightweight architecture, making it suitable for applications where computational efficiency is important.
-
----
-
-2. Visual Stability Classification
-
-A ResNet18 model is used as a primary visual filter to classify images based on visual stability and potential landslide-prone conditions.
-
----
-
-3. Crack Segmentation
-
-A Feature Pyramid Network (FPN) is used for pixel-level crack segmentation.
-
-Configuration:
-
-- Encoder: ResNet34
-- Framework: "segmentation_models_pytorch"
-- Image size: "256 × 256"
-
-The segmentation model identifies the regions corresponding to cracks in the captured image.
-
----
-
-4. Sensor Fusion and Risk Prediction
-
-Sensor measurements are combined using an LSTM-based fusion model.
-
-The model processes temporal sensor information such as:
-
-- Soil moisture
-- Rainfall
-- Vibration
-- Ground movement / tilt
-- Visual information
-
-The fused information is used to estimate the current landslide risk level.
-
----
-
-📊 Risk Prediction
-
-The system categorizes the estimated risk into different levels:
-
-Sensor Data
-     +
-Image Analysis
-     ↓
-Fusion Model
-     ↓
-Risk Assessment
-     ↓
-┌──────────────┐
-│     LOW      │
-├──────────────┤
-│    MEDIUM    │
-├──────────────┤
-│     HIGH     │
-└──────────────┘
 
 ---
 
@@ -206,7 +72,6 @@ Machine Learning
 - Python
 - PyTorch
 - Torchvision
-- segmentation_models_pytorch
 - OpenCV
 - scikit-image
 - NumPy
@@ -218,46 +83,6 @@ Backend
 - Uvicorn
 - SQLite
 - WebSocket
-
-Frontend
-
-- HTML
-- CSS
-- JavaScript
-- Chart.js
-
-Development & Training
-
-- Visual Studio Code
-- Google Colab
-- NVIDIA T4 GPU
-
----
-
-📁 Project Structure
-
-Landslide-Monitoring-System/
-│
-├── ML files/
-│   ├── FPN/
-│   │   └── best_model.pth
-│   ├── ...
-│   └── ...
-│
-├── Microcontroller/
-│   ├── ESP32/
-│   ├── ESP32-CAM/
-│   └── ...
-│
-├── Monitoring/
-│   ├── Backend/
-│   ├── Frontend/
-│   └── ...
-│
-├── .gitignore
-└── README.md
-
-«The exact folder contents may vary depending on the current implementation.»
 
 ---
 
@@ -327,106 +152,12 @@ The dashboard can display:
 
 WebSocket communication is used to support real-time data updates.
 
----
+<img width="1920" height="1200" alt="Screenshot 2026-03-26 201156" src="https://github.com/user-attachments/assets/1abce267-f5f4-4597-b25d-93ad3cec4f1e" />
 
-🧠 Machine Learning Model Files
-
-The repository contains trained model files used by the system.
-
-Large model files such as ".pth" files may be managed separately using Git Large File Storage (Git LFS) when required.
 
 ---
 
-🚀 Installation
 
-Clone the repository
-
-git clone https://github.com/YOUR-USERNAME/Landslide-Monitoring-System---Image-and-Sensor-Fusion.git
-
-Move into the project directory:
-
-cd Landslide-Monitoring-System---Image-and-Sensor-Fusion
-
----
-
-Python Environment
-
-Create a virtual environment:
-
-python -m venv venv
-
-Activate it on Windows:
-
-venv\Scripts\activate
-
-Install the required Python packages:
-
-pip install -r requirements.txt
-
----
-
-▶️ Running the Backend
-
-Navigate to the backend directory:
-
-cd Monitoring
-
-Run the FastAPI server:
-
-uvicorn main:app --reload
-
-The backend can then be accessed locally through the configured server address.
-
----
-
-🔌 Hardware Setup
-
-Connect the sensors to the ESP32 according to the project's hardware configuration.
-
-Main components include:
-
-FC-28 Soil Moisture Sensor → ESP32
-MH-RD Rain Sensor          → ESP32
-MPU6050                    → ESP32 (I²C)
-NEO-6M GPS                 → ESP32
-ESP32-CAM                  → Image Acquisition
-
-The exact GPIO configuration can be found in the corresponding Arduino source files.
-
----
-
-📷 Project Screenshots
-
-Add screenshots of your project here.
-
-Recommended screenshots:
-
-1. Hardware prototype
-2. ESP32-CAM setup
-3. Web dashboard
-4. Sensor graphs
-5. Crack detection result
-6. Crack segmentation result
-7. Landslide risk prediction
-8. GPS location
-
-Example:
-
-![Project Hardware](docs/hardware.jpg)
-
-![Monitoring Dashboard](docs/dashboard.png)
-
-![Crack Segmentation](docs/crack-segmentation.png)
-
----
-
-🎥 Demo
-
-Add your project demonstration video here if available.
-
-Demo: Coming soon
-
----
 
 📌 Key Features
 
